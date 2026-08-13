@@ -23,21 +23,21 @@ The labeled preview is never loaded by the game.
 - Fixed bottom-center origin and ground baseline
 - No automatic resizing, cropping, or background removal during integration
 
-## Locked initial grid
+## Approved Idle v01 grid
 
 | Property | Value |
 | --- | ---: |
-| Cell width | 768 px |
-| Cell height | 512 px |
+| Cell width | 362 px |
+| Cell height | 362 px |
 | Columns | 4 |
-| Rows | 4 |
-| Frames | 16 |
-| Sheet width | 3072 px |
-| Sheet height | 2048 px |
-| Origin X | 384 px |
-| Ground/origin Y | 464 px |
+| Rows | 3 |
+| Frames | 12 |
+| Sheet width | 1448 px |
+| Sheet height | 1086 px |
+| Origin X | 181 px |
+| Ground/origin Y | Per-character manifest |
 
-If approved artwork uses a different grid, the manifest must be deliberately updated. The integration code never guesses cell boundaries.
+The supplied JSON manifest is authoritative for per-frame duration and origin offsets. Future animation categories may use a different declared grid; integration code never guesses cell boundaries.
 
 ## Naming
 

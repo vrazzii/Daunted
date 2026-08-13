@@ -4,7 +4,7 @@ Daunted is being rebuilt as a data-driven, mobile-first 2D fighting game. The re
 
 ## Current milestone
 
-**Rebuild M0 — Animation Pipeline Foundation**
+**Rebuild M1 — Idle Integration**
 
 - Three-fighter registry: Knight (`KNI`), Wolf (`WLF`), and Veiled Saint (`VST`)
 - Deterministic 60 Hz animation clock
@@ -12,6 +12,7 @@ Daunted is being rebuilt as a data-driven, mobile-first 2D fighting game. The re
 - Character-specific provisional movement, weight, health, and damage tuning
 - Runtime sprite contract and PNG validation tool
 - Automated unit tests and GitHub Actions CI
+- Approved Idle v01 runtime sheets and exact manifest timing for all three fighters
 
 The art is produced and approved separately. This repository only receives approved clean runtime spritesheets and uses them in the game.
 

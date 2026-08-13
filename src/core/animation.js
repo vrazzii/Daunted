@@ -63,6 +63,17 @@ export function validateAnimationDefinition(animation) {
     errors.push("frameTicks must contain one positive integer per logical frame");
   }
 
+  if (
+    animation.frameOffsets &&
+    (!Array.isArray(animation.frameOffsets) ||
+      animation.frameOffsets.length !== animation.frameCount ||
+      animation.frameOffsets.some(offset =>
+        !offset || !Number.isFinite(offset.x) || !Number.isFinite(offset.y)
+      ))
+  ) {
+    errors.push("frameOffsets must contain numeric x and y values for every logical frame");
+  }
+
   return [...new Set(errors)];
 }
 
@@ -189,6 +200,8 @@ export class AnimationPlayer {
       animationId: this.animation.id,
       frameIndex: this.frameIndex,
       sheetFrame: this.animation.sequence[this.frameIndex],
+      frameTicks: this.ticksForCurrentFrame(),
+      frameOffset: this.animation.frameOffsets?.[this.frameIndex] ?? { x: 0, y: 0 },
       playing: this.playing,
       completed: this.completed,
       playbackRate: this.playbackRate
