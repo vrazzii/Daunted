@@ -13,6 +13,8 @@ Daunted is being rebuilt as a data-driven, mobile-first 2D fighting game. The re
 - Runtime sprite contract and PNG validation tool
 - Automated unit tests and GitHub Actions CI
 - Approved Idle v01 runtime sheets and exact manifest timing for all three fighters
+- Pause screen with deterministic clock suspension and keyboard shortcuts
+- In-game universal and fighter-specific arcade command reference
 
 The art is produced and approved separately. This repository only receives approved clean runtime spritesheets and uses them in the game.
 
@@ -46,6 +48,10 @@ See [docs/ART-HANDOFF.md](docs/ART-HANDOFF.md). The short version:
 4. Place the preview under `assets/previews/<fighter>/`.
 5. Mark the manifest entry `ready`.
 6. Run the Animation Lab and automated checks.
+
+## Long-term roadmap
+
+Future systems and unapproved roster concepts are tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Roadmap entries do not enter production until their stated approval and stability gates are met.
 
 ## Development order
 

@@ -4,6 +4,7 @@ import { SpriteSheetCache } from "../core/sprite-loader.js";
 import { ANIMATION_LIBRARY, PRODUCTION_ORDER, animationsFor } from "../data/animations.js";
 import { FIGHTERS, getFighter } from "../data/fighters.js";
 import { BALANCE_BASELINE, FIGHTER_TUNING, tuningDelta } from "../data/balance.js";
+import { INPUT_LEGEND, UNIVERSAL_MOVES, moveListFor } from "../data/move-list.js";
 
 const SPEED_OPTIONS = Object.freeze([0.25, 0.5, 0.75, 1, 1.25, 1.5, 2]);
 
@@ -21,6 +22,8 @@ export class AnimationLab {
     this.zoom = 1;
     this.loadToken = 0;
     this.lastTimestamp = performance.now();
+    this.paused = false;
+    this.resumePlayback = true;
 
     this.renderShell();
     this.bindEvents();
@@ -37,9 +40,13 @@ export class AnimationLab {
             <p class="eyebrow">Daunted rebuild M0</p>
             <h1>Animation Lab</h1>
           </div>
-          <div class="topbar-status">
-            <span class="pulse-dot" aria-hidden="true"></span>
-            <span>60 Hz deterministic preview</span>
+          <div class="topbar-actions">
+            <div class="topbar-status">
+              <span class="pulse-dot" aria-hidden="true"></span>
+              <span>60 Hz deterministic preview</span>
+            </div>
+            <button id="move-list-open" class="compact-button" type="button">Move List</button>
+            <button id="pause-open" class="compact-button primary" type="button">Pause</button>
           </div>
         </header>
 
@@ -140,6 +147,59 @@ export class AnimationLab {
             </div>
           </section>
         </div>
+
+        <div id="pause-overlay" class="pause-overlay" hidden>
+          <section class="pause-dialog" role="dialog" aria-modal="true" aria-labelledby="pause-title">
+            <header class="pause-header">
+              <div>
+                <p class="eyebrow">Daunted command archive</p>
+                <h2 id="pause-title">Paused</h2>
+              </div>
+              <button id="pause-close" class="close-button" type="button" aria-label="Resume">×</button>
+            </header>
+            <nav class="pause-tabs" aria-label="Pause menu">
+              <button id="pause-tab" class="active" type="button">Pause</button>
+              <button id="moves-tab" type="button">Move List</button>
+            </nav>
+            <div id="pause-panel" class="pause-panel">
+              <div class="pause-mark" aria-hidden="true">Ⅱ</div>
+              <h3>Animation frozen</h3>
+              <p>The deterministic clock is stopped. Resume when you are ready.</p>
+              <div class="pause-menu-actions">
+                <button id="resume-button" class="primary" type="button">Resume</button>
+                <button id="pause-reset" type="button">Restart Animation</button>
+                <button id="pause-moves" type="button">View Move List</button>
+              </div>
+              <small class="keyboard-hint">P / Esc — pause or resume</small>
+            </div>
+            <div id="moves-panel" class="moves-panel" hidden>
+              <div class="move-list-toolbar">
+                <label>
+                  Fighter command list
+                  <select id="move-fighter-select">
+                    ${FIGHTERS.map(fighter => `<option value="${fighter.id}">${fighter.code} — ${fighter.name}</option>`).join("")}
+                  </select>
+                </label>
+                <div id="move-list-identity" class="move-list-identity"></div>
+              </div>
+              <div class="move-list-scroll">
+                <section>
+                  <div class="move-section-heading"><h3>Universal controls</h3><span>Shared language</span></div>
+                  <div id="universal-moves" class="move-grid"></div>
+                </section>
+                <section>
+                  <div class="move-section-heading"><h3 id="fighter-moves-heading">Character commands</h3><span>Planned</span></div>
+                  <div id="fighter-moves" class="move-grid"></div>
+                </section>
+                <section class="input-legend-section">
+                  <h3>Input legend</h3>
+                  <div id="input-legend" class="input-legend"></div>
+                </section>
+                <p class="move-list-disclaimer">Command design reference. Moves become playable only after approved sprites, frame data, hitboxes, and balance tests are integrated.</p>
+              </div>
+            </div>
+          </section>
+        </div>
       </section>
     `;
 
@@ -166,16 +226,59 @@ export class AnimationLab {
       sheetSize: this.root.querySelector("#sheet-size"),
       cellSize: this.root.querySelector("#cell-size"),
       origin: this.root.querySelector("#origin-readout"),
-      timing: this.root.querySelector("#timing-readout")
+      timing: this.root.querySelector("#timing-readout"),
+      moveListOpen: this.root.querySelector("#move-list-open"),
+      pauseOpen: this.root.querySelector("#pause-open"),
+      pauseOverlay: this.root.querySelector("#pause-overlay"),
+      pauseTitle: this.root.querySelector("#pause-title"),
+      pauseClose: this.root.querySelector("#pause-close"),
+      pauseTab: this.root.querySelector("#pause-tab"),
+      movesTab: this.root.querySelector("#moves-tab"),
+      pausePanel: this.root.querySelector("#pause-panel"),
+      movesPanel: this.root.querySelector("#moves-panel"),
+      resume: this.root.querySelector("#resume-button"),
+      pauseReset: this.root.querySelector("#pause-reset"),
+      pauseMoves: this.root.querySelector("#pause-moves"),
+      moveFighterSelect: this.root.querySelector("#move-fighter-select"),
+      moveListIdentity: this.root.querySelector("#move-list-identity"),
+      universalMoves: this.root.querySelector("#universal-moves"),
+      fighterMovesHeading: this.root.querySelector("#fighter-moves-heading"),
+      fighterMoves: this.root.querySelector("#fighter-moves"),
+      inputLegend: this.root.querySelector("#input-legend")
     };
 
     this.context = this.elements.canvas.getContext("2d", { alpha: false });
     this.context.imageSmoothingEnabled = false;
+    this.renderMoveList();
   }
 
   bindEvents() {
+    this.elements.pauseOpen.addEventListener("click", () => this.openPause("pause"));
+    this.elements.moveListOpen.addEventListener("click", () => this.openPause("moves"));
+    this.elements.pauseClose.addEventListener("click", () => this.closePause());
+    this.elements.resume.addEventListener("click", () => this.closePause());
+    this.elements.pauseTab.addEventListener("click", () => this.showPausePanel("pause"));
+    this.elements.movesTab.addEventListener("click", () => this.showPausePanel("moves"));
+    this.elements.pauseMoves.addEventListener("click", () => this.showPausePanel("moves"));
+    this.elements.pauseReset.addEventListener("click", () => {
+      this.player?.seek(0);
+      this.draw();
+    });
+    this.elements.moveFighterSelect.addEventListener("change", event => this.renderMoveList(event.target.value));
+    this.elements.pauseOverlay.addEventListener("click", event => {
+      if (event.target === this.elements.pauseOverlay) this.closePause();
+    });
+    document.addEventListener("keydown", event => {
+      if (event.key !== "Escape" && event.key.toLowerCase() !== "p") return;
+      if (["INPUT", "SELECT", "TEXTAREA"].includes(event.target.tagName)) return;
+      event.preventDefault();
+      if (this.paused) this.closePause();
+      else this.openPause("pause");
+    });
+
     this.elements.fighterSelect.addEventListener("change", event => {
       this.fighterId = event.target.value;
+      this.renderMoveList(this.fighterId);
       this.populateAnimationSelect();
       this.loadSelection();
     });
@@ -234,6 +337,62 @@ export class AnimationLab {
     });
   }
 
+  openPause(panel = "pause") {
+    if (!this.paused) {
+      this.resumePlayback = this.player?.playing ?? true;
+      this.player?.pause();
+      this.paused = true;
+    }
+    this.elements.pauseOverlay.hidden = false;
+    document.body.classList.add("menu-open");
+    this.showPausePanel(panel);
+    this.elements.pauseClose.focus({ preventScroll: true });
+    this.updatePlayButton();
+  }
+
+  closePause() {
+    if (!this.paused) return;
+    this.elements.pauseOverlay.hidden = true;
+    document.body.classList.remove("menu-open");
+    this.paused = false;
+    this.lastTimestamp = performance.now();
+    this.fixedStep.reset();
+    if (this.resumePlayback) this.player?.play();
+    this.updatePlayButton();
+    this.elements.pauseOpen.focus({ preventScroll: true });
+  }
+
+  showPausePanel(panel) {
+    const movesOpen = panel === "moves";
+    this.elements.pausePanel.hidden = movesOpen;
+    this.elements.movesPanel.hidden = !movesOpen;
+    this.elements.pauseTab.classList.toggle("active", !movesOpen);
+    this.elements.movesTab.classList.toggle("active", movesOpen);
+    this.elements.pauseTitle.textContent = movesOpen ? "Move List" : "Paused";
+  }
+
+  moveCard(entry) {
+    return `
+      <article class="move-card ${entry.strength}">
+        <div class="move-card-top"><h4>${entry.name}</h4><kbd>${entry.input}</kbd></div>
+        <p>${entry.purpose}</p>
+        <dl><dt>Animation</dt><dd>${entry.animation}</dd></dl>
+        ${entry.note ? `<small>${entry.note}</small>` : ""}
+      </article>
+    `;
+  }
+
+  renderMoveList(fighterId = this.fighterId) {
+    const fighter = getFighter(fighterId) ?? FIGHTERS[0];
+    const list = moveListFor(fighter.id);
+    this.elements.moveFighterSelect.value = fighter.id;
+    this.elements.universalMoves.innerHTML = UNIVERSAL_MOVES.map(entry => this.moveCard(entry)).join("");
+    this.elements.fighterMoves.innerHTML = list.moves.map(entry => this.moveCard(entry)).join("");
+    this.elements.fighterMovesHeading.textContent = `${fighter.name} commands`;
+    this.elements.moveListIdentity.innerHTML = `<strong>${list.title}</strong><span>${list.identity}</span>`;
+    this.elements.inputLegend.innerHTML = INPUT_LEGEND.map(item => `<div><kbd>${item.token}</kbd><span>${item.label}</span></div>`).join("");
+  }
+
   populateAnimationSelect() {
     const entries = Object.values(animationsFor(this.fighterId));
     this.elements.animationSelect.innerHTML = entries
@@ -284,7 +443,7 @@ export class AnimationLab {
       let changed = false;
 
       this.fixedStep.push(delta, () => {
-        changed = this.player?.updateTicks(1) || changed;
+        if (!this.paused) changed = this.player?.updateTicks(1) || changed;
       });
 
       if (changed) this.draw();
