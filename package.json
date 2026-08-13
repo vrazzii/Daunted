@@ -1,0 +1,15 @@
+{
+  "name": "daunted",
+  "version": "0.1.0",
+  "private": true,
+  "type": "module",
+  "description": "Data-driven mobile fighting game foundation for Daunted.",
+  "scripts": {
+    "test": "node --test",
+    "validate:sprites": "node tools/validate-sprites.mjs",
+    "check": "npm test && npm run validate:sprites"
+  },
+  "engines": {
+    "node": ">=20"
+  }
+}
