@@ -1,4 +1,4 @@
-import { AnimationPlayer, frameSourceRect, expectedSheetSize } from "../core/animation.js";
+import { AnimationPlayer, frameRenderOffset, frameSourceRect, expectedSheetSize } from "../core/animation.js";
 import { FixedStepAccumulator } from "../core/fixed-step.js";
 import { SpriteSheetCache } from "../core/sprite-loader.js";
 import { ANIMATION_LIBRARY, PRODUCTION_ORDER, animationsFor } from "../data/animations.js";
@@ -470,7 +470,7 @@ export class AnimationLab {
 
     if (this.sheetResult?.status === "ready" && this.sheetResult.image) {
       const source = frameSourceRect(animation, this.player.frameIndex);
-      const offset = animation.frameOffsets?.[this.player.frameIndex] ?? { x: 0, y: 0 };
+      const renderOffset = frameRenderOffset(animation, this.player.frameIndex);
       ctx.save();
       ctx.imageSmoothingEnabled = false;
       if (this.mirrored) {
@@ -483,8 +483,8 @@ export class AnimationLab {
         source.y,
         source.width,
         source.height,
-        -offset.x,
-        -offset.y,
+        renderOffset.x,
+        renderOffset.y,
         width,
         height
       );

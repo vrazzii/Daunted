@@ -3,6 +3,7 @@ import assert from "node:assert/strict";
 import {
   AnimationPlayer,
   expectedSheetSize,
+  frameRenderOffset,
   frameSourceRect,
   validateAnimationDefinition
 } from "../src/core/animation.js";
@@ -79,4 +80,26 @@ test("source manifest offsets are retained for grounded alignment", () => {
   const player = new AnimationPlayer(saintIdle);
   player.seek(8);
   assert.deepEqual(player.snapshot().frameOffset, { x: 0, y: 21 });
+});
+
+
+test("every approved idle frame resolves through explicit ground correction", () => {
+  for (const animations of Object.values(ANIMATION_LIBRARY)) {
+    const animation = animations.idle;
+    for (let frame = 0; frame < animation.frameCount; frame += 1) {
+      const renderOffset = frameRenderOffset(animation, frame);
+      assert.equal(renderOffset.x, -(animation.frameOffsets[frame]?.x ?? 0));
+      assert.equal(renderOffset.y, -(animation.frameOffsets[frame]?.y ?? 0));
+    }
+  }
+});
+
+test("ground correction counteracts frame-specific sprite drift", () => {
+  const corrected = {
+    ...idle,
+    frameOffsets: idle.frameOffsets.map((offset, index) =>
+      index === 1 ? { x: 3, y: -2 } : offset
+    )
+  };
+  assert.deepEqual(frameRenderOffset(corrected, 1), { x: -3, y: 2 });
 });

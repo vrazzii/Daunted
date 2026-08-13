@@ -98,6 +98,16 @@ export function frameSourceRect(animation, logicalFrameIndex) {
   };
 }
 
+export function frameRenderOffset(animation, logicalFrameIndex) {
+  const normalized = normalizeFrame(logicalFrameIndex, animation.frameCount);
+  const offset = animation.frameOffsets?.[normalized] ?? { x: 0, y: 0 };
+
+  return Object.freeze({
+    x: -offset.x,
+    y: -offset.y
+  });
+}
+
 function normalizeFrame(index, frameCount) {
   return ((index % frameCount) + frameCount) % frameCount;
 }
