@@ -19,15 +19,15 @@ test("every registered animation passes the manifest contract", () => {
 });
 
 test("idle sheet dimensions are derived from its uniform grid", () => {
-  assert.deepEqual(expectedSheetSize(idle), { width: 3072, height: 2048 });
+  assert.deepEqual(expectedSheetSize(idle), { width: 1448, height: 1086 });
 });
 
 test("logical frame maps to the correct source cell", () => {
   assert.deepEqual(frameSourceRect(idle, 5), {
-    x: 768,
-    y: 512,
-    width: 768,
-    height: 512,
+    x: 362,
+    y: 362,
+    width: 362,
+    height: 362,
     logicalFrame: 5,
     sheetFrame: 5
   });
@@ -61,4 +61,22 @@ test("playback rate changes presentation without changing the manifest", () => {
   player.updateTicks(idle.ticksPerFrame / 2);
   assert.equal(player.frameIndex, 1);
   assert.equal(idle.ticksPerFrame, 6);
+});
+
+test("Wolf uses the authoritative variable frame timing", () => {
+  const wolfIdle = ANIMATION_LIBRARY.wolf.idle;
+  const player = new AnimationPlayer(wolfIdle);
+  player.seek(1);
+  player.updateTicks(4);
+  assert.equal(player.frameIndex, 1);
+  player.updateTicks(1);
+  assert.equal(player.frameIndex, 2);
+  assert.equal(wolfIdle.frameTicks.reduce((sum, ticks) => sum + ticks, 0), 70);
+});
+
+test("source manifest offsets are retained for grounded alignment", () => {
+  const saintIdle = ANIMATION_LIBRARY["veiled-saint"].idle;
+  const player = new AnimationPlayer(saintIdle);
+  player.seek(8);
+  assert.deepEqual(player.snapshot().frameOffset, { x: 0, y: 21 });
 });

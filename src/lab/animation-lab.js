@@ -311,6 +311,7 @@ export class AnimationLab {
 
     if (this.sheetResult?.status === "ready" && this.sheetResult.image) {
       const source = frameSourceRect(animation, this.player.frameIndex);
+      const offset = animation.frameOffsets?.[this.player.frameIndex] ?? { x: 0, y: 0 };
       ctx.save();
       ctx.imageSmoothingEnabled = false;
       if (this.mirrored) {
@@ -323,8 +324,8 @@ export class AnimationLab {
         source.y,
         source.width,
         source.height,
-        0,
-        0,
+        -offset.x,
+        -offset.y,
         width,
         height
       );
@@ -431,7 +432,9 @@ export class AnimationLab {
     this.elements.sheetSize.textContent = `${expected.width} × ${expected.height}`;
     this.elements.cellSize.textContent = `${animation.frameWidth} × ${animation.frameHeight}`;
     this.elements.origin.textContent = `${animation.origin.x}, ${animation.origin.y}`;
-    this.elements.timing.textContent = `${animation.ticksPerFrame} ticks/frame`;
+    const loopTicks = (animation.frameTicks ?? Array(animation.frameCount).fill(animation.ticksPerFrame))
+      .reduce((total, ticks) => total + ticks, 0);
+    this.elements.timing.textContent = `${loopTicks} ticks/loop`;
     this.elements.assetStatus.className = `asset-status ${status}`;
     this.elements.assetStatus.innerHTML = `
       <strong>${status.toUpperCase()}</strong>
@@ -453,6 +456,7 @@ export class AnimationLab {
       <strong>${String(snapshot.frameIndex + 1).padStart(2, "0")}</strong>
       <span>/ ${String(this.player.animation.frameCount).padStart(2, "0")}</span>
       <small>sheet cell ${snapshot.sheetFrame}</small>
+      <small>${snapshot.frameTicks} ticks · offset ${snapshot.frameOffset.x}, ${snapshot.frameOffset.y}</small>
     `;
   }
 }
