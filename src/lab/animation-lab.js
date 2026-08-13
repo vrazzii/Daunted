@@ -1,7 +1,7 @@
 import { AnimationPlayer, frameRenderOffset, frameSourceRect, expectedSheetSize } from "../core/animation.js";
 import { FixedStepAccumulator } from "../core/fixed-step.js";
 import { SpriteSheetCache } from "../core/sprite-loader.js";
-import { ANIMATION_LIBRARY, PRODUCTION_ORDER, animationsFor } from "../data/animations.js";
+import { ANIMATION_LIBRARY, PRODUCTION_ORDER, animationsFor } from "../data/animation-library.js";
 import { FIGHTERS, getFighter } from "../data/fighters.js";
 import { BALANCE_BASELINE, FIGHTER_TUNING, tuningDelta } from "../data/balance.js";
 import { INPUT_LEGEND, UNIVERSAL_MOVES, moveListFor } from "../data/move-list.js";
@@ -37,13 +37,13 @@ export class AnimationLab {
       <section class="app-shell">
         <header class="topbar">
           <div>
-            <p class="eyebrow">Daunted rebuild M0</p>
+            <p class="eyebrow">Daunted rebuild M1</p>
             <h1>Animation Lab</h1>
           </div>
           <div class="topbar-actions">
             <div class="topbar-status">
               <span class="pulse-dot" aria-hidden="true"></span>
-              <span>60 Hz deterministic preview</span>
+              <span>56 animations · 580 mapped frames</span>
             </div>
             <button id="move-list-open" class="compact-button" type="button">Move List</button>
             <button id="pause-open" class="compact-button primary" type="button">Pause</button>
@@ -142,8 +142,8 @@ export class AnimationLab {
             </div>
 
             <div class="pipeline-note">
-              <strong>Integration gate</strong>
-              <p>Pending artwork stays out of combat. A sheet becomes usable only after file validation and a clean Animation Lab review.</p>
+              <strong>Production sprite library</strong>
+              <p>All recovered base-form sheets are loaded from verified packages. Specials, supers, knockdowns, wake-ups, and KO remain gated until their approved artwork arrives.</p>
             </div>
           </section>
         </div>

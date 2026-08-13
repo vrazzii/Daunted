@@ -79,20 +79,22 @@ export function validateAnimationDefinition(animation) {
 
 export function expectedSheetSize(animation) {
   return {
-    width: animation.frameWidth * animation.columns,
-    height: animation.frameHeight * animation.rows
+    width: animation.sheetWidth ?? animation.frameWidth * animation.columns,
+    height: animation.sheetHeight ?? animation.frameHeight * animation.rows
   };
 }
 
 export function frameSourceRect(animation, logicalFrameIndex) {
   const normalized = normalizeFrame(logicalFrameIndex, animation.frameCount);
   const sheetFrame = animation.sequence[normalized];
+  const sourceWidth = (animation.sheetWidth ?? animation.frameWidth * animation.columns) / animation.columns;
+  const sourceHeight = (animation.sheetHeight ?? animation.frameHeight * animation.rows) / animation.rows;
 
   return {
-    x: (sheetFrame % animation.columns) * animation.frameWidth,
-    y: Math.floor(sheetFrame / animation.columns) * animation.frameHeight,
-    width: animation.frameWidth,
-    height: animation.frameHeight,
+    x: (sheetFrame % animation.columns) * sourceWidth,
+    y: Math.floor(sheetFrame / animation.columns) * sourceHeight,
+    width: sourceWidth,
+    height: sourceHeight,
     logicalFrame: normalized,
     sheetFrame
   };

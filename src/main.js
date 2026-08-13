@@ -1,5 +1,5 @@
 import { validateAnimationDefinition } from "./core/animation.js";
-import { ANIMATION_LIBRARY } from "./data/animations.js";
+import { ANIMATION_LIBRARY } from "./data/animation-library.js";
 import { validateBalanceTuning } from "./data/balance.js";
 import { validateMoveLists } from "./data/move-list.js";
 import { AnimationLab } from "./lab/animation-lab.js";
