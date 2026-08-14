@@ -18,7 +18,7 @@ concurrency:
 jobs:
   validate:
     runs-on: ubuntu-latest
-    timeout-minutes: 5
+    timeout-minutes: 10
     steps:
       - name: Check out repository
         uses: actions/checkout@v4
@@ -33,3 +33,14 @@ jobs:
 
       - name: Validate sprite manifests and ready sheets
         run: npm run validate:sprites
+
+      - name: Build offline playtest
+        run: python3 tools/build-offline-playtest.py
+
+      - name: Upload offline playtest
+        uses: actions/upload-artifact@v4
+        with:
+          name: daunted-offline-playtest
+          path: dist/Daunted_Offline_Playtest.html
+          compression-level: 0
+          if-no-files-found: error
