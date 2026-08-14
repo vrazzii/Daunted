@@ -29,9 +29,13 @@ jobs:
           node-version: 20
 
       - name: Run unit tests
+        id: tests
+        continue-on-error: true
         run: npm test
 
       - name: Validate sprite manifests and ready sheets
+        id: sprites
+        continue-on-error: true
         run: npm run validate:sprites
 
       - name: Build offline playtest
@@ -44,3 +48,7 @@ jobs:
           path: dist/Daunted_Offline_Playtest.html
           compression-level: 0
           if-no-files-found: error
+
+      - name: Fail if validation failed
+        if: steps.tests.outcome != 'success' || steps.sprites.outcome != 'success'
+        run: exit 1
