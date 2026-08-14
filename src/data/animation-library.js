@@ -8,18 +8,21 @@ const IDLE = Object.freeze({
   wolf: Object.freeze({ origin: { x: 181, y: 336 }, ticks: [6, 5, 5, 5, 6, 7, 6, 5, 5, 5, 7, 8], offsets: [-13, -13, -13, -13, 0, -1, 0, 0, 11, 10, 10, 10] }),
   "veiled-saint": Object.freeze({ origin: { x: 181, y: 345 }, ticks: Array(12).fill(8), offsets: [-10, -10, -10, -10, 0, 0, 0, 0, 21, 21, 21, 21] })
 });
+const QUARANTINED = Object.freeze({
+  "wolf/walk-forward": "Malformed PNG: IDAT chunk exceeds file length. Replace from an approved clean source before production use."
+});
 
 function choose(fighterId, standard, wolf = standard, knight = standard) {
   return fighterId === "wolf" ? wolf : fighterId === "knight" ? knight : standard;
 }
 
-function create({ fighterId, id, label, category, path, size, columns, rows, count = columns * rows, frameTicks, ticks = 4, loop = false, sequence, origin, offsets }) {
+function create({ fighterId, id, label, category, path, size, columns, rows, count = columns * rows, frameTicks, ticks = 4, loop = false, sequence, origin, offsets, status = "ready", statusReason = "" }) {
   const [sheetWidth, sheetHeight] = size;
   const frameWidth = Math.floor(sheetWidth / columns);
   const frameHeight = Math.floor(sheetHeight / rows);
   const durations = frameTicks ?? Array(count).fill(ticks);
   return Object.freeze({
-    fighterId, id, label, category, status: "ready", sheet: path, version: "v01",
+    fighterId, id, label, category, status, statusReason, sheet: path, version: "v01",
     sheetWidth, sheetHeight, frameWidth, frameHeight, columns, rows, frameCount: count,
     origin: Object.freeze(origin ?? { x: Math.floor(frameWidth / 2), y: Math.max(1, frameHeight - 1) }),
     sequence: Object.freeze(sequence ?? Array.from({ length: count }, (_, index) => index)),
@@ -49,12 +52,14 @@ const SPECS = Object.freeze([
 ]);
 
 function characterAnimation(fighterId, spec) {
+  const quarantineKey = `${fighterId}/${spec.id}`;
+  const statusReason = QUARANTINED[quarantineKey] ?? "";
   return create({
     fighterId, id: spec.id, label: spec.label, category: spec.category,
     path: path(spec.pack, spec.file.replace("{code}", CODE[fighterId])),
     size: choose(fighterId, spec.size, spec.wolf, spec.knight), columns: spec.columns, rows: spec.rows,
     count: spec.count, frameTicks: spec.frameTicks, ticks: spec.perFighter?.[fighterId] ?? spec.ticks,
-    loop: spec.loop
+    loop: spec.loop, status: statusReason ? "pending" : "ready", statusReason
   });
 }
 
