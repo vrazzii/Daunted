@@ -36,6 +36,30 @@ test("logical frame maps to the correct source cell", () => {
   });
 });
 
+test("non-divisible sheets partition only on integer pixel boundaries", () => {
+  const odd = ANIMATION_LIBRARY.knight["crouching-light"];
+  const cells = Array.from({ length: odd.frameCount }, (_, frame) => frameSourceRect(odd, frame));
+  assert.ok(cells.every(cell => Number.isInteger(cell.x) && Number.isInteger(cell.y)));
+  assert.ok(cells.every(cell => Number.isInteger(cell.width) && Number.isInteger(cell.height)));
+  assert.equal(Math.max(...cells.map(cell => cell.width)), 373);
+  assert.equal(Math.min(...cells.map(cell => cell.width)), 372);
+  assert.equal(Math.max(...cells.map(cell => cell.height)), 528);
+  assert.equal(Math.min(...cells.map(cell => cell.height)), 527);
+});
+
+test("native source pixels are never rescaled by destination geometry", () => {
+  for (const animations of Object.values(ANIMATION_LIBRARY)) {
+    for (const animation of Object.values(animations)) {
+      for (let frame = 0; frame < animation.frameCount; frame += 1) {
+        const source = frameSourceRect(animation, frame);
+        const destination = frameDestinationRect(animation, frame);
+        assert.equal(destination.width, source.width);
+        assert.equal(destination.height, source.height);
+      }
+    }
+  }
+});
+
 test("animation timing is independent from art frame count", () => {
   const player = new AnimationPlayer(idle);
   player.updateTicks(idle.ticksPerFrame - 1);
