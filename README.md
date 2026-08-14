@@ -1,26 +1,29 @@
 # Daunted
 
-Daunted is being rebuilt as a data-driven, mobile-first 2D fighting game. The repository currently contains the production foundation and Animation Lab used to validate artwork before combat integration.
+Daunted is being rebuilt as a data-driven, mobile-first 2D fighting game. The repository currently contains the production animation foundation and Animation Lab used to validate artwork before combat integration.
 
 ## Current milestone
 
-**Rebuild M1 — Idle Integration**
+**Rebuild M1.3 — Repository & Sprite Pipeline Stabilization**
 
 - Three-fighter registry: Knight (`KNI`), Wolf (`WLF`), and Veiled Saint (`VST`)
-- Deterministic 60 Hz animation clock
+- 56 registered production animations/effects across the recovered base-form sprite library
+- One authoritative animation library shared by runtime, tests, and validation tools
+- Deterministic 60 Hz animation clock with variable per-frame timing
+- Stable presentation geometry that prevents correction offsets from clipping sprite pixels
+- Integer source-cell partitioning for sheets whose dimensions do not divide evenly by their grid
+- Native source pixels are rendered 1:1 instead of being rescaled between frames
 - Animation Lab with playback, frame stepping, mirroring, speed controls, and origin/baseline overlays
 - Character-specific provisional movement, weight, health, and damage tuning
-- Runtime sprite contract and PNG validation tool
+- PNG dimension/format validation plus pixel-level alpha auditing
 - Automated unit tests and GitHub Actions CI
-- Approved Idle v01 runtime sheets and exact manifest timing for all three fighters
-- Pause screen with deterministic clock suspension and keyboard shortcuts
-- In-game universal and fighter-specific arcade command reference
+- Pause screen and in-game universal/fighter command reference
 
-The art is produced and approved separately. This repository only receives approved clean runtime spritesheets and uses them in the game.
+The art is produced and approved separately. The runtime should only consume approved transparent sprite sheets. Suspicious cells surfaced by the alpha audit still require visual review before combat integration.
 
 ## Run locally
 
-Because the app uses native JavaScript modules, serve the repository with any static server instead of opening `index.html` directly.
+The app uses native JavaScript modules, so serve the repository with a static server instead of opening `index.html` directly.
 
 ```bash
 npx serve .
@@ -28,34 +31,52 @@ npx serve .
 
 Then open the local URL displayed by the server.
 
+Opening the generated HTML inside an iOS Files/Quick Look preview is **not** considered a supported runtime. Quick Look may render HTML/CSS without executing the JavaScript needed by the playtest. Use a real browser/server environment for interactive testing.
+
 ## Checks
 
 ```bash
 npm test
 npm run validate:sprites
+npm run audit:sprites
 npm run check
 ```
 
-`validate:sprites` skips animation entries marked `pending`. Once a sheet is imported, its manifest status changes to `ready`, and validation becomes mandatory.
+- `validate:sprites` verifies every `ready` animation definition and its PNG dimensions/format.
+- `audit:sprites` decodes the actual RGBA pixels, fails empty mapped cells, and warns about suspicious near-opaque or boundary-heavy cells that may indicate baked backgrounds, bad crops, or neighboring-sprite contamination.
+- `npm run check` runs the full automated contract.
+
+## Embedded sprite playtest builds
+
+The builder reads the same authoritative animation library as the runtime, so it cannot silently drift into a second hand-maintained manifest.
+
+```bash
+# Compact smoke build: all three idles
+npm run build:playtest
+
+# Full embedded sprite library (large file)
+npm run build:playtest:full
+
+# Target one fighter or animation directly
+node tools/build-offline-playtest.mjs --fighter=veiled-saint --animation=standing-light
+```
+
+Generated files are written to `dist/` and are not committed.
 
 ## Art handoff
 
-See [docs/ART-HANDOFF.md](docs/ART-HANDOFF.md). The short version:
+See [docs/ART-HANDOFF.md](docs/ART-HANDOFF.md). Before an animation is promoted into combat:
 
-1. Upload the ZIP from the art workflow.
-2. Validate the clean runtime PNG and labeled preview.
-3. Place the runtime sheet under `assets/sprites/<fighter>/`.
-4. Place the preview under `assets/previews/<fighter>/`.
-5. Mark the manifest entry `ready`.
-6. Run the Animation Lab and automated checks.
-
-## Long-term roadmap
-
-Future systems and unapproved roster concepts are tracked in [docs/ROADMAP.md](docs/ROADMAP.md). Roadmap entries do not enter production until their stated approval and stability gates are met.
+1. Import the approved transparent runtime PNG.
+2. Register it in the authoritative animation library.
+3. Run `npm run check`.
+4. Inspect any alpha-audit warnings visually at 1× and mirrored presentation.
+5. Verify scale, grounding, crop, timing, and continuity in the Animation Lab.
+6. Only then integrate it into gameplay state/hitbox logic.
 
 ## Development order
 
-1. Idle
+1. Sprite geometry and asset sanitation
 2. Walking
 3. Basic attacks
 4. Movement and jumps
@@ -64,4 +85,4 @@ Future systems and unapproved roster concepts are tracked in [docs/ROADMAP.md](d
 7. Supers
 8. Full combat rebuild and matchup balance
 
-`main` is kept runnable. Every accepted animation category receives its own focused commit after validation.
+The durable roadmap/checkpoint lives in [docs/ROADMAP.md](docs/ROADMAP.md). `main` should remain runnable and CI-clean after every accepted change.
