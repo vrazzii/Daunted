@@ -43,7 +43,8 @@ for (const animations of Object.values(ANIMATION_LIBRARY)) {
 
     if (animation.status !== "ready") {
       pending += 1;
-      console.log(`PENDING  ${label} -> ${animation.sheet}`);
+      const reason = animation.statusReason ? ` — ${animation.statusReason}` : "";
+      console.log(`PENDING  ${label} -> ${animation.sheet}${reason}`);
       continue;
     }
 
