@@ -110,6 +110,44 @@ export function frameRenderOffset(animation, logicalFrameIndex) {
   });
 }
 
+export function presentationGeometry(animation) {
+  const offsets = Array.from({ length: animation.frameCount }, (_, index) =>
+    frameRenderOffset(animation, index)
+  );
+  const minX = Math.min(0, ...offsets.map(offset => offset.x));
+  const maxX = Math.max(0, ...offsets.map(offset => offset.x));
+  const minY = Math.min(0, ...offsets.map(offset => offset.y));
+  const maxY = Math.max(0, ...offsets.map(offset => offset.y));
+  const padding = Object.freeze({
+    left: -minX,
+    right: maxX,
+    top: -minY,
+    bottom: maxY
+  });
+
+  return Object.freeze({
+    width: animation.frameWidth + padding.left + padding.right,
+    height: animation.frameHeight + padding.top + padding.bottom,
+    padding,
+    origin: Object.freeze({
+      x: padding.left + animation.origin.x,
+      y: padding.top + animation.origin.y
+    })
+  });
+}
+
+export function frameDestinationRect(animation, logicalFrameIndex) {
+  const geometry = presentationGeometry(animation);
+  const offset = frameRenderOffset(animation, logicalFrameIndex);
+
+  return Object.freeze({
+    x: geometry.padding.left + offset.x,
+    y: geometry.padding.top + offset.y,
+    width: animation.frameWidth,
+    height: animation.frameHeight
+  });
+}
+
 function normalizeFrame(index, frameCount) {
   return ((index % frameCount) + frameCount) % frameCount;
 }
