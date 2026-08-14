@@ -1,4 +1,4 @@
-import { AnimationPlayer, frameRenderOffset, frameSourceRect, expectedSheetSize } from "../core/animation.js";
+import { AnimationPlayer, expectedSheetSize, frameDestinationRect, frameSourceRect, presentationGeometry } from "../core/animation.js";
 import { FixedStepAccumulator } from "../core/fixed-step.js";
 import { SpriteSheetCache } from "../core/sprite-loader.js";
 import { ANIMATION_LIBRARY, PRODUCTION_ORDER, animationsFor } from "../data/animation-library.js";
@@ -96,7 +96,7 @@ export class AnimationLab {
               </label>
               <label class="check-row">
                 <input id="guide-control" type="checkbox" checked>
-                Show cell, baseline, and origin
+                Show canvas, baseline, and origin
               </label>
             </section>
 
@@ -143,7 +143,7 @@ export class AnimationLab {
 
             <div class="pipeline-note">
               <strong>Production sprite library</strong>
-              <p>All recovered base-form sheets are loaded from verified packages. Specials, supers, knockdowns, wake-ups, and KO remain gated until their approved artwork arrives.</p>
+              <p>Recovered base-form sheets render inside a stable presentation canvas sized for the full animation offset envelope, preventing legitimate frame correction from clipping attacks or body extensions.</p>
             </div>
           </section>
         </div>
@@ -422,8 +422,9 @@ export class AnimationLab {
   }
 
   configureCanvas(animation) {
-    this.elements.canvas.width = animation.frameWidth;
-    this.elements.canvas.height = animation.frameHeight;
+    const geometry = presentationGeometry(animation);
+    this.elements.canvas.width = geometry.width;
+    this.elements.canvas.height = geometry.height;
     this.context = this.elements.canvas.getContext("2d", { alpha: false });
     this.context.imageSmoothingEnabled = false;
     this.applyCanvasZoom();
@@ -432,8 +433,9 @@ export class AnimationLab {
   applyCanvasZoom() {
     const animation = this.player?.animation;
     if (!animation) return;
-    this.elements.canvas.style.width = `${animation.frameWidth * this.zoom}px`;
-    this.elements.canvas.style.height = `${animation.frameHeight * this.zoom}px`;
+    const geometry = presentationGeometry(animation);
+    this.elements.canvas.style.width = `${geometry.width * this.zoom}px`;
+    this.elements.canvas.style.height = `${geometry.height * this.zoom}px`;
   }
 
   startLoop() {
@@ -458,8 +460,9 @@ export class AnimationLab {
     if (!animation) return;
 
     const ctx = this.context;
-    const width = animation.frameWidth;
-    const height = animation.frameHeight;
+    const geometry = presentationGeometry(animation);
+    const width = geometry.width;
+    const height = geometry.height;
     const gradient = ctx.createLinearGradient(0, 0, 0, height);
     gradient.addColorStop(0, "#151220");
     gradient.addColorStop(1, "#090811");
@@ -470,7 +473,7 @@ export class AnimationLab {
 
     if (this.sheetResult?.status === "ready" && this.sheetResult.image) {
       const source = frameSourceRect(animation, this.player.frameIndex);
-      const renderOffset = frameRenderOffset(animation, this.player.frameIndex);
+      const destination = frameDestinationRect(animation, this.player.frameIndex);
       ctx.save();
       ctx.imageSmoothingEnabled = false;
       if (this.mirrored) {
@@ -483,17 +486,17 @@ export class AnimationLab {
         source.y,
         source.width,
         source.height,
-        renderOffset.x,
-        renderOffset.y,
-        width,
-        height
+        destination.x,
+        destination.y,
+        destination.width,
+        destination.height
       );
       ctx.restore();
     } else {
       this.drawPendingState(ctx, animation, width, height);
     }
 
-    if (this.showGuides) this.drawGuides(ctx, animation, width, height);
+    if (this.showGuides) this.drawGuides(ctx, animation, geometry);
     this.updateFrameReadout();
   }
 
@@ -528,17 +531,17 @@ export class AnimationLab {
     ctx.restore();
   }
 
-  drawGuides(ctx, animation, width, height) {
-    const originX = this.mirrored ? width - animation.origin.x : animation.origin.x;
-    const originY = animation.origin.y;
+  drawGuides(ctx, animation, geometry) {
+    const originX = this.mirrored ? geometry.width - geometry.origin.x : geometry.origin.x;
+    const originY = geometry.origin.y;
     ctx.save();
     ctx.lineWidth = 2;
     ctx.strokeStyle = "rgba(140,104,255,.85)";
-    ctx.strokeRect(1, 1, width - 2, height - 2);
+    ctx.strokeRect(1, 1, geometry.width - 2, geometry.height - 2);
     ctx.strokeStyle = "rgba(255,197,87,.85)";
     ctx.beginPath();
     ctx.moveTo(0, originY + 0.5);
-    ctx.lineTo(width, originY + 0.5);
+    ctx.lineTo(geometry.width, originY + 0.5);
     ctx.stroke();
     ctx.strokeStyle = "rgba(111,225,255,.95)";
     ctx.beginPath();
@@ -583,14 +586,15 @@ export class AnimationLab {
     const fighter = getFighter(this.fighterId);
     const animation = this.player.animation;
     const expected = expectedSheetSize(animation);
+    const geometry = presentationGeometry(animation);
     const status = this.sheetResult?.status ?? "loading";
     const errors = this.sheetResult?.errors ?? [];
 
     this.elements.stageCode.textContent = `${fighter.code} / ${animation.category}`;
     this.elements.stageTitle.textContent = `${fighter.name} — ${animation.label}`;
     this.elements.sheetSize.textContent = `${expected.width} × ${expected.height}`;
-    this.elements.cellSize.textContent = `${animation.frameWidth} × ${animation.frameHeight}`;
-    this.elements.origin.textContent = `${animation.origin.x}, ${animation.origin.y}`;
+    this.elements.cellSize.textContent = `${animation.frameWidth} × ${animation.frameHeight} · canvas ${geometry.width} × ${geometry.height}`;
+    this.elements.origin.textContent = `${geometry.origin.x}, ${geometry.origin.y}`;
     const loopTicks = (animation.frameTicks ?? Array(animation.frameCount).fill(animation.ticksPerFrame))
       .reduce((total, ticks) => total + ticks, 0);
     this.elements.timing.textContent = `${loopTicks} ticks/loop`;
@@ -611,11 +615,12 @@ export class AnimationLab {
   updateFrameReadout() {
     if (!this.player) return;
     const snapshot = this.player.snapshot();
+    const destination = frameDestinationRect(this.player.animation, snapshot.frameIndex);
     this.elements.frameReadout.innerHTML = `
       <strong>${String(snapshot.frameIndex + 1).padStart(2, "0")}</strong>
       <span>/ ${String(this.player.animation.frameCount).padStart(2, "0")}</span>
       <small>sheet cell ${snapshot.sheetFrame}</small>
-      <small>${snapshot.frameTicks} ticks · offset ${snapshot.frameOffset.x}, ${snapshot.frameOffset.y}</small>
+      <small>${snapshot.frameTicks} ticks · source offset ${snapshot.frameOffset.x}, ${snapshot.frameOffset.y} · draw ${destination.x}, ${destination.y}</small>
     `;
   }
 }
