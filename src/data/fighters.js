@@ -1,27 +1,23 @@
 export const FIGHTERS = Object.freeze([
   Object.freeze({
-    id: "knight",
-    code: "KNI",
-    name: "Knight",
-    shortRole: "Fast duelist",
+    id: "ornate-veil",
+    code: "ORV",
+    name: "Ornate Veil",
+    shortRole: "Anointed control fighter",
+    masterAsset: "assets/masters/ornate-veil-master.png",
+    integrationStatus: "master-approved",
     integrationNote:
-      "The speed-focused fighter. Lower damage per opening is compensated by mobility, responsiveness, and shorter recovery windows."
+      "Character 1 for the two-fighter rebuild. Preserve the approved master silhouette, silver bob, blindfold, black-and-antique-gold armor, burgundy layers, cracked pale skin, purple energy, and broken halo. Runtime animation assets must be derived from and visually validated against this master before activation."
   }),
   Object.freeze({
-    id: "wolf",
-    code: "WLF",
-    name: "Wolf",
-    shortRole: "Heavy bruiser",
+    id: "brute-devil",
+    code: "BRD",
+    name: "Brute Devil",
+    shortRole: "Axe-wielding pressure brute",
+    masterAsset: "assets/masters/brute-devil-master.png",
+    integrationStatus: "master-approved",
     integrationNote:
-      "The largest and slowest fighter. Larger hurtboxes and longer commitments are compensated by health, impact, damage, and knockback."
-  }),
-  Object.freeze({
-    id: "veiled-saint",
-    code: "VST",
-    name: "Veiled Saint",
-    shortRole: "Unassigned specialist",
-    integrationNote:
-      "Uses the neutral baseline until her approved move library establishes a specific mechanical identity."
+      "Character 2 for the two-fighter rebuild. Preserve the approved master silhouette, charcoal stone skin, restrained red-hot cracks, asymmetrical horns, broken ornate-gold shackles and chains, burgundy remnants, and massive desecrated ceremonial axe. Runtime animation assets must be derived from and visually validated against this master before activation."
   })
 ]);
 
