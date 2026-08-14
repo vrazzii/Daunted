@@ -7,7 +7,8 @@ Daunted is being rebuilt as a data-driven, mobile-first 2D fighting game. The re
 **Rebuild M1.3 — Repository & Sprite Pipeline Stabilization**
 
 - Three-fighter registry: Knight (`KNI`), Wolf (`WLF`), and Veiled Saint (`VST`)
-- 56 registered production animations/effects across the recovered base-form sprite library
+- 56 registered production animations/effects across the recovered base-form sprite library: **55 verified ready, 1 quarantined pending replacement**
+- Wolf `walk-forward` is quarantined because its imported PNG contains a malformed IDAT chunk; it must not be promoted back to `ready` until a clean approved source replaces it
 - One authoritative animation library shared by runtime, tests, and validation tools
 - Deterministic 60 Hz animation clock with variable per-frame timing
 - Stable presentation geometry that prevents correction offsets from clipping sprite pixels
@@ -42,19 +43,19 @@ npm run audit:sprites
 npm run check
 ```
 
-- `validate:sprites` verifies every `ready` animation definition and its PNG dimensions/format.
-- `audit:sprites` decodes the actual RGBA pixels, fails empty mapped cells, and warns about suspicious near-opaque or boundary-heavy cells that may indicate baked backgrounds, bad crops, or neighboring-sprite contamination.
+- `validate:sprites` verifies every `ready` animation definition and its PNG dimensions/format and reports pending/quarantined assets with their reason.
+- `audit:sprites` decodes the actual RGBA pixels, fails empty mapped fighter cells, allows intentionally sparse transparent FX timing cells, and warns about suspicious near-opaque or boundary-heavy cells that may indicate baked backgrounds, bad crops, or neighboring-sprite contamination.
 - `npm run check` runs the full automated contract.
 
 ## Embedded sprite playtest builds
 
-The builder reads the same authoritative animation library as the runtime, so it cannot silently drift into a second hand-maintained manifest.
+The builder reads the same authoritative animation library as the runtime, so it cannot silently drift into a second hand-maintained manifest. Pending/quarantined animations are excluded.
 
 ```bash
 # Compact smoke build: all three idles
 npm run build:playtest
 
-# Full embedded sprite library (large file)
+# Full embedded verified-ready sprite library (large file)
 npm run build:playtest:full
 
 # Target one fighter or animation directly
