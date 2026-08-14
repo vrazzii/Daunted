@@ -3,8 +3,10 @@ import assert from "node:assert/strict";
 import {
   AnimationPlayer,
   expectedSheetSize,
+  frameDestinationRect,
   frameRenderOffset,
   frameSourceRect,
+  presentationGeometry,
   validateAnimationDefinition
 } from "../src/core/animation.js";
 import { ANIMATION_LIBRARY } from "../src/data/animations.js";
@@ -82,7 +84,6 @@ test("source manifest offsets are retained for grounded alignment", () => {
   assert.deepEqual(player.snapshot().frameOffset, { x: 0, y: 21 });
 });
 
-
 test("every approved idle frame resolves through explicit ground correction", () => {
   for (const animations of Object.values(ANIMATION_LIBRARY)) {
     const animation = animations.idle;
@@ -102,4 +103,34 @@ test("ground correction counteracts frame-specific sprite drift", () => {
     )
   };
   assert.deepEqual(frameRenderOffset(corrected, 1), { x: -3, y: 2 });
+});
+
+test("presentation geometry reserves enough room for every frame offset", () => {
+  const corrected = {
+    ...idle,
+    frameOffsets: idle.frameOffsets.map((offset, index) => {
+      if (index === 1) return { x: 8, y: -5 };
+      if (index === 2) return { x: -11, y: 7 };
+      return { x: 0, y: 0 };
+    })
+  };
+  const geometry = presentationGeometry(corrected);
+  assert.deepEqual(geometry.padding, { left: 8, right: 11, top: 7, bottom: 5 });
+  assert.equal(geometry.width, corrected.frameWidth + 19);
+  assert.equal(geometry.height, corrected.frameHeight + 12);
+});
+
+test("every destination rectangle stays fully inside the presentation canvas", () => {
+  for (const animations of Object.values(ANIMATION_LIBRARY)) {
+    for (const animation of Object.values(animations)) {
+      const geometry = presentationGeometry(animation);
+      for (let frame = 0; frame < animation.frameCount; frame += 1) {
+        const destination = frameDestinationRect(animation, frame);
+        assert.ok(destination.x >= 0);
+        assert.ok(destination.y >= 0);
+        assert.ok(destination.x + destination.width <= geometry.width);
+        assert.ok(destination.y + destination.height <= geometry.height);
+      }
+    }
+  }
 });
