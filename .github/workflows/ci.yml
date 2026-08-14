@@ -26,29 +26,10 @@ jobs:
       - name: Set up Node
         uses: actions/setup-node@v4
         with:
-          node-version: 20
+          node-version: 24
 
-      - name: Run unit tests
-        id: tests
-        continue-on-error: true
-        run: npm test
+      - name: Run full repository checks
+        run: npm run check
 
-      - name: Validate sprite manifests and ready sheets
-        id: sprites
-        continue-on-error: true
-        run: npm run validate:sprites
-
-      - name: Build offline playtest
-        run: python3 tools/build-offline-playtest.py
-
-      - name: Upload offline playtest
-        uses: actions/upload-artifact@v4
-        with:
-          name: daunted-offline-playtest
-          path: dist/Daunted_Offline_Playtest.html
-          compression-level: 0
-          if-no-files-found: error
-
-      - name: Fail if validation failed
-        if: steps.tests.outcome != 'success' || steps.sprites.outcome != 'success'
-        run: exit 1
+      - name: Build compact embedded sprite smoke test
+        run: npm run build:playtest
