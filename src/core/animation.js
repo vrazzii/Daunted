@@ -84,17 +84,27 @@ export function expectedSheetSize(animation) {
   };
 }
 
+function partitionEdge(total, parts, index) {
+  return Math.round((total * index) / parts);
+}
+
 export function frameSourceRect(animation, logicalFrameIndex) {
   const normalized = normalizeFrame(logicalFrameIndex, animation.frameCount);
   const sheetFrame = animation.sequence[normalized];
-  const sourceWidth = (animation.sheetWidth ?? animation.frameWidth * animation.columns) / animation.columns;
-  const sourceHeight = (animation.sheetHeight ?? animation.frameHeight * animation.rows) / animation.rows;
+  const sheetWidth = animation.sheetWidth ?? animation.frameWidth * animation.columns;
+  const sheetHeight = animation.sheetHeight ?? animation.frameHeight * animation.rows;
+  const column = sheetFrame % animation.columns;
+  const row = Math.floor(sheetFrame / animation.columns);
+  const x0 = partitionEdge(sheetWidth, animation.columns, column);
+  const x1 = partitionEdge(sheetWidth, animation.columns, column + 1);
+  const y0 = partitionEdge(sheetHeight, animation.rows, row);
+  const y1 = partitionEdge(sheetHeight, animation.rows, row + 1);
 
   return {
-    x: (sheetFrame % animation.columns) * sourceWidth,
-    y: Math.floor(sheetFrame / animation.columns) * sourceHeight,
-    width: sourceWidth,
-    height: sourceHeight,
+    x: x0,
+    y: y0,
+    width: x1 - x0,
+    height: y1 - y0,
     logicalFrame: normalized,
     sheetFrame
   };
@@ -114,6 +124,11 @@ export function presentationGeometry(animation) {
   const offsets = Array.from({ length: animation.frameCount }, (_, index) =>
     frameRenderOffset(animation, index)
   );
+  const sources = Array.from({ length: animation.frameCount }, (_, index) =>
+    frameSourceRect(animation, index)
+  );
+  const baseWidth = Math.max(animation.frameWidth, ...sources.map(source => source.width));
+  const baseHeight = Math.max(animation.frameHeight, ...sources.map(source => source.height));
   const minX = Math.min(0, ...offsets.map(offset => offset.x));
   const maxX = Math.max(0, ...offsets.map(offset => offset.x));
   const minY = Math.min(0, ...offsets.map(offset => offset.y));
@@ -126,8 +141,10 @@ export function presentationGeometry(animation) {
   });
 
   return Object.freeze({
-    width: animation.frameWidth + padding.left + padding.right,
-    height: animation.frameHeight + padding.top + padding.bottom,
+    width: baseWidth + padding.left + padding.right,
+    height: baseHeight + padding.top + padding.bottom,
+    baseWidth,
+    baseHeight,
     padding,
     origin: Object.freeze({
       x: padding.left + animation.origin.x,
@@ -139,12 +156,13 @@ export function presentationGeometry(animation) {
 export function frameDestinationRect(animation, logicalFrameIndex) {
   const geometry = presentationGeometry(animation);
   const offset = frameRenderOffset(animation, logicalFrameIndex);
+  const source = frameSourceRect(animation, logicalFrameIndex);
 
   return Object.freeze({
     x: geometry.padding.left + offset.x,
     y: geometry.padding.top + offset.y,
-    width: animation.frameWidth,
-    height: animation.frameHeight
+    width: source.width,
+    height: source.height
   });
 }
 
