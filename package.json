@@ -7,7 +7,9 @@
   "scripts": {
     "test": "node --test",
     "validate:sprites": "node tools/validate-sprites.mjs",
-    "check": "npm test && npm run validate:sprites"
+    "check": "npm test && npm run validate:sprites",
+    "build:playtest": "node tools/build-offline-playtest.mjs",
+    "build:playtest:full": "node tools/build-offline-playtest.mjs --full"
   },
   "engines": {
     "node": ">=20"
