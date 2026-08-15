@@ -2,7 +2,7 @@ import { validateAnimationDefinition } from "./core/animation.js";
 import { ANIMATION_LIBRARY } from "./data/animation-library.js";
 import { validateBalanceTuning } from "./data/balance.js";
 import { validateMoveLists } from "./data/move-list.js";
-import { AnimationLab } from "./lab/animation-lab.js";
+import { ActiveAnimationLab } from "./lab/active-animation-lab.js";
 
 function validateFoundation() {
   const errors = [...validateBalanceTuning(), ...validateMoveLists()];
@@ -33,6 +33,6 @@ if (errors.length) {
   `;
   console.error("DAUNTED FOUNDATION ERRORS", errors);
 } else {
-  new AnimationLab(root);
-  console.info("DAUNTED REBUILD M0 READY");
+  new ActiveAnimationLab(root);
+  console.info("DAUNTED ACTIVE REBUILD LAB READY");
 }
