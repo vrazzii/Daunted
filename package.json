@@ -5,6 +5,7 @@
   "type": "module",
   "description": "Data-driven mobile fighting game foundation for Daunted.",
   "scripts": {
+    "dev": "npx --yes serve . -l 5173",
     "test": "node --test",
     "validate:sprites": "node tools/validate-sprites.mjs",
     "audit:sprites": "node tools/audit-sprites.mjs",
